@@ -25,6 +25,7 @@ type Message struct {
 	inlines           []string
 
 	testMode           bool
+	nativeSend         bool // edited by Icedroid on 2015-02-13
 	tracking           bool
 	trackingClicks     bool
 	trackingOpens      bool
@@ -359,6 +360,18 @@ func (m *Message) EnableTestMode() {
 	m.testMode = true
 }
 
+//You're seeing this in the headers due to Mailgun rewriting the value in order to track delayed bounces.
+//There is a parameter for both the API and SMTP that is not in the doucmentation that will allow this default value to be disabled
+//so that the rewriting no longer occurs.
+//
+//For the API, use the following parameter in your application:
+//o:native-send='yes'
+//For SMTP, use the following parameter in your application:
+//X-Mailgun-Native-Send:yes
+func (m *Message) EnableNativeSend() {
+	m.nativeSend = true
+}
+
 // SetDeliveryTime schedules the message for transmission at the indicated time.
 // Pass nil to remove any installed schedule.
 // Refer to the Mailgun documentation for more information.
@@ -443,6 +456,9 @@ func (m *MailgunImpl) Send(message *Message) (mes string, id string, err error) 
 		}
 		if message.testMode {
 			payload.AddValue("o:testmode", "yes")
+		}
+		if message.nativeSend {
+			payload.AddValue("o:native-send", "yes")
 		}
 		if message.trackingSet {
 			payload.AddValue("o:tracking", yesNo(message.tracking))
