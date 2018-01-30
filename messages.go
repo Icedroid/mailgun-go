@@ -1,9 +1,11 @@
 package mailgun
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/mbanzon/simplehttp"
@@ -502,7 +504,13 @@ func (m *MailgunImpl) Send(message *Message) (mes string, id string, err error) 
 			}
 		}
 
+		//解决golang https请求提示x509: certificate signed by unknown authority
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
 		r := simplehttp.NewHTTPRequest(generateApiUrl(m, message.specific.endpoint()))
+		r.SetClient(client)
 		r.SetBasicAuth(basicAuthUser, m.ApiKey())
 
 		var response sendMessageResponse
